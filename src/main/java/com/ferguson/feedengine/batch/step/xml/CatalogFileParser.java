@@ -1,4 +1,4 @@
-package com.ferguson;
+package com.ferguson.feedengine.batch.step.xml;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

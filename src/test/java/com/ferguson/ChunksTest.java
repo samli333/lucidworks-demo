@@ -12,8 +12,12 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.ferguson.feedengine.batch.FullFeedJobConfiguration;
+import com.ferguson.feedengine.batch.JobFacilitiesConfiguration;
+
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = ChunksConfig.class)
+
+@ContextConfiguration(classes = {JobFacilitiesConfiguration.class, FullFeedJobConfiguration.class})
 @EnableAutoConfiguration
 public class ChunksTest {
 

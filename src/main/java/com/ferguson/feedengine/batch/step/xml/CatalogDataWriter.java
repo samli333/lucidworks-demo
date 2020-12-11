@@ -1,4 +1,4 @@
-package com.ferguson;
+package com.ferguson.feedengine.batch.step.xml;
 
 import java.util.List;
 import java.util.Map;
@@ -10,7 +10,7 @@ import org.springframework.batch.item.ItemWriter;
 
 import com.alibaba.fastjson.JSONObject;
 
-public class ElementWriter implements 
+public class CatalogDataWriter implements 
 ItemWriter<Map>, StepExecutionListener {
 
 

@@ -1,4 +1,4 @@
-package com.ferguson;
+package com.ferguson.feedengine.batch.step.xml;
 
 import java.util.Map;
 
@@ -7,7 +7,7 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
 
-public class ElementProcessor implements 
+public class CatalogDataProcessor implements 
 ItemProcessor<Map, Map>, StepExecutionListener {
 
 

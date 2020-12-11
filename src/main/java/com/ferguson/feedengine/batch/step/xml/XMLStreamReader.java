@@ -1,4 +1,4 @@
-package com.ferguson;
+package com.ferguson.feedengine.batch.step.xml;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,7 +13,7 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemReader;
 
-public class ElementReader implements ItemReader<Map>, StepExecutionListener {
+public class XMLStreamReader implements ItemReader<Map>, StepExecutionListener {
 
 	private XMLEventReader reader;
 
