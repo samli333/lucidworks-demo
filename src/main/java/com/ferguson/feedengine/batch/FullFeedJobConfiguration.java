@@ -13,12 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 
-import com.ferguson.feedengine.batch.step.csv.CSVDataProcessor;
-import com.ferguson.feedengine.batch.step.csv.CSVDataWriter;
-import com.ferguson.feedengine.batch.step.csv.CSVLineReader;
-import com.ferguson.feedengine.batch.step.xml.CatalogDataProcessor;
-import com.ferguson.feedengine.batch.step.xml.CatalogDataWriter;
-import com.ferguson.feedengine.batch.step.xml.XMLStreamReader;
+import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
+import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
+import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
+import com.ferguson.feedengine.batch.step.preparation.CSVDataProcessor;
+import com.ferguson.feedengine.batch.step.preparation.CSVDataWriter;
+import com.ferguson.feedengine.batch.step.preparation.CSVLineReader;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
 
 public class FullFeedJobConfiguration {
 	@Autowired 
@@ -36,30 +39,27 @@ public class FullFeedJobConfiguration {
      * @param writer
      * @return
      */
-    @Bean("preparationStep")
-    protected Step preparationStep(
-    		@Qualifier("csvLineReader")ItemReader<Map> reader,
-    		@Qualifier("csvDataProcessor")ItemProcessor<Map, Map> processor, 
-    		@Qualifier("csvDataWriter")ItemWriter<Map> writer) {
+    @Bean
+    protected Step preparationStep() {
     	// TODO: will use Partitioning feature in this step.
         return steps.get("preparation").<Map, Map> chunk(30)
-          .reader(reader)
-          .processor(processor)
-          .writer(writer)
+          .reader(csvLineReader())
+          .processor(csvDataProcessor())
+          .writer(csvDataWriter())
           .build();
     }
     
-    @Bean("csvLineReader")
+    @Bean
     public ItemReader<Map> csvLineReader() {
         return new CSVLineReader();
     }
 
-    @Bean("csvDataProcessor")
+    @Bean
     public ItemProcessor<Map, Map> csvDataProcessor() {
         return new CSVDataProcessor();
     }
 
-    @Bean("csvDataWriter")
+    @Bean
     public ItemWriter<Map> csvDataWriter() {
         return new CSVDataWriter();
     }
@@ -78,51 +78,77 @@ public class FullFeedJobConfiguration {
      * @param writer
      * @return
      */
-    @Bean("stiboFileFeedStep")
-    protected Step stiboFileFeedStep(
-    		@Qualifier("xmlStreamReader")ItemReader<Map> reader,
-    		@Qualifier("catalogDataProcessor")ItemProcessor<Map, Map> processor, 
-    		@Qualifier("catalogDataWriter")ItemWriter<Map> writer) {
-        return steps.get("StiboFileFeed").<Map, Map> chunk(30)
-          .reader(reader)
-          .processor(processor)
-          .writer(writer)
+    @Bean
+    protected Step stiboFileFeedStep() {
+        return steps.get("stiboFileFeedStep").<Map, Map> chunk(30)
+          .reader(catalogDataReaderReader())
+          .processor(catalogDataProcessor())
+          .writer(catalogDataWriter())
           .build();
     }
     
     
-    @Bean("xmlStreamReader")
-    public ItemReader<Map> xmlStreamReader() {
-        return new XMLStreamReader();
+    @Bean
+    public ItemReader<Map> catalogDataReaderReader() {
+        return new CatalogDataReader();
     }
 
-    @Bean("catalogDataProcessor")
+    @Bean
     public ItemProcessor<Map, Map> catalogDataProcessor() {
         return new CatalogDataProcessor();
     }
 
-    @Bean("catalogDataWriter")
+    @Bean
     public ItemWriter<Map> catalogDataWriter() {
         return new CatalogDataWriter();
     }
     
     
-//    @Bean("stiboFileFeedBackup")
-//    protected Step stiboFileFeedBackup(ItemReader<Map> reader,
-//      ItemProcessor<Map, Map> processor, ItemWriter<Map> writer) {
-//        return steps.get("StiboFileFeedBackup").<Map, Map> chunk(30)
-//          .reader(reader)
-//          .processor(processor)
-//          .writer(writer)
-//          .build();
-//    }
+    @Bean
+    protected Step stiboFileFeedBackup() {
+        return steps.get("StiboFileFeedBackup").<Map, Map> chunk(30)
+        		.reader(catalogDataReaderReader())
+                .processor(catalogDataProcessor())
+                .writer(catalogDataWriter())
+          .build();
+    }
+    
+    
+    @Bean
+    protected Step generateDataSourceStep() {
+        return steps.get("generateDataSource").<Map, Map> chunk(30)
+          .reader(dataSourceReader())
+          .processor(dataSourceProcessor())
+          .writer(dataSourceWriter())
+          .build();
+    }
+    
+    @Bean
+    public ItemReader<Map> dataSourceReader() {
+        return new DataSourceReader();
+    }
 
-    @Bean("fullFeedJob")
-    public Job job() {
+    @Bean
+    public ItemProcessor<Map, Map> dataSourceProcessor() {
+        return new DataSourceProcessor();
+    }
+
+    @Bean
+    public ItemWriter<Map> dataSourceWriter() {
+        return new DataSourceWriter();
+    }
+
+    @Bean
+    public Job fullFeedJob() {
         return jobs
           .get("fullFeed")
-          .start(preparationStep(csvLineReader(), csvDataProcessor(), csvDataWriter()))
-          .next(stiboFileFeedStep(xmlStreamReader(), catalogDataProcessor(), catalogDataWriter()))
+          .start(preparationStep())
+          .next(stiboFileFeedStep())
+          .on("Complete But Skip Product Feed").to(stiboFileFeedBackup())
+          .on("*").to(generateDataSourceStep())
+          .from(stiboFileFeedStep())
+          .on("*").to(generateDataSourceStep())
+          .end()
           .build();
     }
 }

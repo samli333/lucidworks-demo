@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.xml;
+package com.ferguson.feedengine.batch.utils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,7 +32,7 @@ import com.alibaba.fastjson.JSONObject;
  *
  */
 @Service
-public class CatalogFileParser {
+public class XMLStreamParser {
 
 	public static final String ELEMENT_NAME = "_elementName_";
 	public static final String VALUE = "_value_";

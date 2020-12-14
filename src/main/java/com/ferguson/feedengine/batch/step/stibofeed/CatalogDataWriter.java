@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.xml;
+package com.ferguson.feedengine.batch.step.stibofeed;
 
 import java.util.List;
 import java.util.Map;

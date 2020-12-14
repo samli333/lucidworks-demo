@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.xml;
+package com.ferguson.feedengine.batch.step.stibofeed;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,13 +13,17 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemReader;
 
-public class XMLStreamReader implements ItemReader<Map>, StepExecutionListener {
+import com.ferguson.feedengine.batch.utils.XMLStreamParser;
+
+public class CatalogDataReader implements ItemReader<Map>, StepExecutionListener {
 
 	private XMLEventReader reader;
+	private StepExecution stepExecution;
+	
 
 	@Override
 	public void beforeStep(StepExecution stepExecution) {
-		
+		this.stepExecution = stepExecution;
 		String filePath = "/Lucidworks/156032797-156032811.xml";
 //		String filePath = "/Lucidworks/exported-1559527628716.txt";
 		XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
@@ -33,9 +37,9 @@ public class XMLStreamReader implements ItemReader<Map>, StepExecutionListener {
 
 	@Override
 	public Map read() throws Exception {
+		this.stepExecution.setExitStatus(new ExitStatus("Complete But Skip Product Feed"));
 		System.out.println("++++++++++++ "+Thread.currentThread().getName()+" reader read element");
-		
-		return CatalogFileParser.parse(reader);
+		return XMLStreamParser.parse(reader);
 	}
 
 	@Override
