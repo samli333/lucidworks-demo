@@ -2,12 +2,13 @@ package com.ferguson.feedengine.batch.step.preparation;
 
 import java.util.Map;
 
+import com.ferguson.feedengine.data.model.BaseBean;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
 
-public class CSVDataProcessor implements ItemProcessor<Map, Map>, StepExecutionListener {
+public class CSVDataProcessor implements ItemProcessor<BaseBean, BaseBean>, StepExecutionListener {
 
 	
 	@Override
@@ -23,8 +24,8 @@ public class CSVDataProcessor implements ItemProcessor<Map, Map>, StepExecutionL
 	}
 
 	@Override
-	public Map process(Map item) throws Exception {
-		System.out.println("================= CSV process");
+	public BaseBean process(BaseBean item) throws Exception {
+		System.out.println("=================" + item.getClass());
 		return item;
 	}
 

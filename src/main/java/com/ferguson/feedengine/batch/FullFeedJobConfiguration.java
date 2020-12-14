@@ -1,10 +1,17 @@
 package com.ferguson.feedengine.batch;
 
-import java.io.IOException;
-import java.util.Map;
-
-import com.ferguson.feedengine.batch.item.file.mapping.MapFieldSetMapper;
 import com.ferguson.feedengine.batch.partition.MultiResourceFilesPartitioner;
+import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
+import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
+import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
+import com.ferguson.feedengine.batch.step.preparation.CSVDataProcessor;
+import com.ferguson.feedengine.batch.step.preparation.CSVDataWriter;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
+import com.ferguson.feedengine.data.model.BaseBean;
+import com.ferguson.feedengine.data.model.BestSellerBean;
+import com.ferguson.feedengine.data.model.SalesRankBean;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -13,27 +20,20 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.*;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.mapping.RecordFieldSetMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-
-import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
-import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
-import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
-import com.ferguson.feedengine.batch.step.preparation.CSVDataProcessor;
-import com.ferguson.feedengine.batch.step.preparation.CSVDataWriter;
-import com.ferguson.feedengine.batch.step.preparation.CSVLineReader;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.io.IOException;
+import java.util.Map;
 
 @Configuration
 public class FullFeedJobConfiguration {
@@ -76,8 +76,7 @@ public class FullFeedJobConfiguration {
 
     @Bean("slaveStep")
     public Step slaveStep() {
-        // TODO: will use Partitioning feature in this step.
-        return steps.get("slaveStep").<Map, Map>chunk(30)
+        return steps.get("slaveStep").<BaseBean, BaseBean>chunk(30)
                 .reader(csvLineReader(null))
                 .processor(csvDataProcessor())
                 .writer(csvDataWriter())
@@ -96,18 +95,21 @@ public class FullFeedJobConfiguration {
 
     @StepScope
     @Bean
-    public FlatFileItemReader<Map<String, String>> csvLineReader(
+    public FlatFileItemReader<BaseBean> csvLineReader(
             @Value("#{stepExecutionContext[fileName]}") String filename)
             throws UnexpectedInputException, ParseException {
-        FlatFileItemReader<Map<String, String>> reader = new FlatFileItemReader<>();
+        FlatFileItemReader<BaseBean> reader = new FlatFileItemReader<>();
         DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
         String[] tokens = null;
+        Class iclass = null;
         switch (filename) {
             case "best_seller_data.csv":
-                tokens = new String[]{"skuId", "branchId", "rank"};
+                tokens = new String[]{"skuId", "branch", "rank"};
+                iclass = BestSellerBean.class;
                 break;
             case "sales_rank_data.csv":
-                tokens = new String[]{"skuId", "revenue"};
+                tokens = new String[]{"skuId", "sales"};
+                iclass = SalesRankBean.class;
                 break;
             default:
                 tokens = new String[]{};
@@ -116,9 +118,10 @@ public class FullFeedJobConfiguration {
         tokenizer.setNames(tokens);
         ClassPathResource resource = new ClassPathResource("input/" + filename);
         reader.setResource(resource);
-        DefaultLineMapper<Map<String, String>> lineMapper = new DefaultLineMapper<>();
+        DefaultLineMapper<BaseBean> lineMapper = new DefaultLineMapper<>();
         lineMapper.setLineTokenizer(tokenizer);
-        lineMapper.setFieldSetMapper(new MapFieldSetMapper());
+        RecordFieldSetMapper fieldSetMapper = new RecordFieldSetMapper(iclass);
+        lineMapper.setFieldSetMapper(fieldSetMapper);
         reader.setLinesToSkip(1);
         reader.setLineMapper(lineMapper);
         return reader;
@@ -126,13 +129,13 @@ public class FullFeedJobConfiguration {
 
     @StepScope
     @Bean("csvDataProcessor")
-    public ItemProcessor<Map, Map> csvDataProcessor() {
+    public ItemProcessor<BaseBean, BaseBean> csvDataProcessor() {
         return new CSVDataProcessor();
     }
 
     @StepScope
     @Bean("csvDataWriter")
-    public ItemWriter<Map> csvDataWriter() {
+    public ItemWriter<BaseBean> csvDataWriter() {
         return new CSVDataWriter();
     }
     

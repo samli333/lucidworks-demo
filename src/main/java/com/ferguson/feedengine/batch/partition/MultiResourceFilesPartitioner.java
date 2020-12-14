@@ -24,7 +24,6 @@ public class MultiResourceFilesPartitioner implements Partitioner {
 			ExecutionContext context = new ExecutionContext();
 			Assert.state(resource.exists(), "Resource does not exist: " + resource);
 			context.putString("fileName", resource.getFilename());
-			context.putString("opFileName", "output" + k++ + ".xml");
 			map.put("partition" + i, context);
 			i++;
 		}
