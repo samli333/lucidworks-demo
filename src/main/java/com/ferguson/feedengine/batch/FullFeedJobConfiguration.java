@@ -8,6 +8,7 @@ import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
+import com.ferguson.feedengine.batch.utils.Cache;
 import com.ferguson.feedengine.data.model.BaseBean;
 import com.ferguson.feedengine.data.model.TempBestSellerBean;
 import com.ferguson.feedengine.data.model.SalesRankBean;
@@ -213,5 +214,10 @@ public class FullFeedJobConfiguration {
           .on("*").to(generateDataSourceStep())
           .end()
           .build();
+    }
+
+    @Bean
+    public Cache cache() {
+        return new Cache();
     }
 }

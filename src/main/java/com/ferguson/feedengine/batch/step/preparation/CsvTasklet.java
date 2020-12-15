@@ -1,5 +1,6 @@
 package com.ferguson.feedengine.batch.step.preparation;
 
+import com.ferguson.feedengine.batch.utils.Cache;
 import com.ferguson.feedengine.data.model.BaseBean;
 import com.ferguson.feedengine.data.model.BestSellerBean;
 import com.ferguson.feedengine.data.model.TempBestSellerBean;
@@ -23,14 +24,20 @@ import java.util.stream.Collectors;
 
 public class CsvTasklet implements Tasklet, StepExecutionListener {
 
-    private ItemStreamReader<BaseBean> itemReader;
     @Autowired
     @Qualifier("bestSellerBeanRepository")
     private ElasticsearchRepository bestSellerRepository;
+
     @Autowired
     @Qualifier("salesRankBeanRepository")
     private ElasticsearchRepository salesRankRepository;
+
+    @Autowired
+    private Cache cache;
+
     private String filename;
+
+    private ItemStreamReader<BaseBean> itemReader;
 
     public CsvTasklet(ItemStreamReader<BaseBean> itemReader) {
         this.itemReader = itemReader;
@@ -55,7 +62,6 @@ public class CsvTasklet implements Tasklet, StepExecutionListener {
             itemReader.close();
         }
 
-
         switch (filename) {
             case "best_seller_data.csv":
                 Map<String, List<BaseBean>> map = items.stream().collect(Collectors.groupingBy(i -> i.getSkuId()));
@@ -67,9 +73,11 @@ public class CsvTasklet implements Tasklet, StepExecutionListener {
                     BestSellerBean bean = new BestSellerBean(e.getKey(), collect);
                     return bean;
                 }).collect(Collectors.toList());
+                cache.put(filename, lItems);
                 bestSellerRepository.saveAll(lItems);
                 break;
             case "sales_rank_data.csv":
+                cache.put(filename, items);
                 salesRankRepository.saveAll(items);
                 break;
             default:
