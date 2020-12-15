@@ -17,7 +17,6 @@ ItemProcessor<Map, Map>, StepExecutionListener {
   
   @Override
   public Map process(Map element) throws Exception {
-	  System.out.println("------------ "+Thread.currentThread().getName()+" process element");
 	  return element;
   }
 

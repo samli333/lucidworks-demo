@@ -29,7 +29,6 @@ public class CSVLineReader implements ItemReader<Map>, StepExecutionListener {
 
 	@Override
 	public Map read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
-		System.out.println("================= CSV read");
 		count++;
 		if (count> 10) {
 			return null;

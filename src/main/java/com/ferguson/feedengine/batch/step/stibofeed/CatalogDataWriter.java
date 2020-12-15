@@ -21,7 +21,6 @@ ItemWriter<Map>, StepExecutionListener {
 
   @Override
   public void write(List<? extends Map> elements) throws Exception {
-	  System.out.println("------------ "+Thread.currentThread().getName()+" Write element"); 
   }
 
   @Override

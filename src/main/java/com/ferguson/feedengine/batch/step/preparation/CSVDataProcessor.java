@@ -25,7 +25,6 @@ public class CSVDataProcessor implements ItemProcessor<BaseBean, BaseBean>, Step
 
 	@Override
 	public BaseBean process(BaseBean item) throws Exception {
-		System.out.println("=================" + item.getClass());
 		return item;
 	}
 

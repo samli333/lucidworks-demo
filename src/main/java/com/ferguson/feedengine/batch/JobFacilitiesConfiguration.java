@@ -19,35 +19,35 @@ import org.springframework.transaction.PlatformTransactionManager;
 @EnableBatchProcessing
 public class JobFacilitiesConfiguration {
 
-	@Bean
-	public JobRepository jobRepository() throws Exception {
-		MapJobRepositoryFactoryBean factory = new MapJobRepositoryFactoryBean();
-		factory.setTransactionManager(transactionManager());
-		return (JobRepository) factory.getObject();
-	}
+//	@Bean
+//	public JobRepository jobRepository() throws Exception {
+//		MapJobRepositoryFactoryBean factory = new MapJobRepositoryFactoryBean();
+//		factory.setTransactionManager(transactionManager());
+//		return (JobRepository) factory.getObject();
+//	}
 
-	@Bean
-	public PlatformTransactionManager transactionManager() {
-		return new ResourcelessTransactionManager();
-	}
-
-	@Bean
-	public JobLauncher jobLauncher() throws Exception {
-		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
-		jobLauncher.setJobRepository(jobRepository());
-		return jobLauncher;
-	}
-
-	@Bean
-	public DataSource dataSource() {
-		return (DataSource) DataSourceBuilder.create().url("jdbc:h2:mem:testdb").driverClassName("org.h2.Driver")
-				.username("sa").password("password").build();
-	}
-
-	@Bean
-	public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-		return new JdbcTemplate(dataSource);
-	}
+//	@Bean
+//	public PlatformTransactionManager transactionManager() {
+//		return new ResourcelessTransactionManager();
+//	}
+//
+//	@Bean
+//	public JobLauncher jobLauncher() throws Exception {
+//		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
+//		jobLauncher.setJobRepository(jobRepository());
+//		return jobLauncher;
+//	}
+//
+//	@Bean
+//	public DataSource dataSource() {
+//		return (DataSource) DataSourceBuilder.create().url("jdbc:h2:mem:testdb").driverClassName("org.h2.Driver")
+//				.username("sa").password("password").build();
+//	}
+//
+//	@Bean
+//	public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+//		return new JdbcTemplate(dataSource);
+//	}
 	
 	@Bean
 	public JobLauncherTestUtils jobLauncherTestUtils() {

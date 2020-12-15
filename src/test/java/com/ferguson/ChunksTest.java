@@ -17,7 +17,7 @@ import com.ferguson.feedengine.batch.JobFacilitiesConfiguration;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 
-@ContextConfiguration(classes = {JobFacilitiesConfiguration.class, FullFeedJobConfiguration.class})
+@ContextConfiguration(classes = {LucidworksPocApplication.class, JobFacilitiesConfiguration.class, FullFeedJobConfiguration.class})
 @EnableAutoConfiguration
 public class ChunksTest {
 
