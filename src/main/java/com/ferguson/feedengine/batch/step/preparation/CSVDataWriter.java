@@ -1,31 +1,36 @@
 package com.ferguson.feedengine.batch.step.preparation;
 
-import java.util.List;
-import java.util.Map;
-
+import com.ferguson.feedengine.data.model.BaseBean;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
-public class CSVDataWriter implements ItemWriter<Map>, StepExecutionListener {
+import java.util.List;
 
-	@Override
-	public void beforeStep(StepExecution stepExecution) {
-		// TODO Auto-generated method stub
+public class CSVDataWriter implements ItemWriter<BaseBean>, StepExecutionListener {
 
+    @Autowired
+    private ElasticsearchRepository repository;
+
+    @Override
+    public void beforeStep(StepExecution stepExecution) {
+		ExecutionContext executionContext = stepExecution.getExecutionContext();
+		System.out.println("executionContext" + executionContext);
 	}
 
-	@Override
-	public ExitStatus afterStep(StepExecution stepExecution) {
-		// TODO Auto-generated method stub
-		return ExitStatus.COMPLETED;
-	}
+    @Override
+    public ExitStatus afterStep(StepExecution stepExecution) {
+        // TODO Auto-generated method stub
+        return ExitStatus.COMPLETED;
+    }
 
-	@Override
-	public void write(List<? extends Map> items) throws Exception {
-		System.out.println("================= CSV write");
-		
-	}
+    @Override
+    public void write(List<? extends BaseBean> items) throws Exception {
+        repository.saveAll(items);
+    }
 
 }
