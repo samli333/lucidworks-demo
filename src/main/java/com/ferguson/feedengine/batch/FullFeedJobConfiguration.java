@@ -4,13 +4,13 @@ import com.ferguson.feedengine.batch.partition.MultiResourceFilesPartitioner;
 import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
 import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
 import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
-import com.ferguson.feedengine.batch.step.preparation.CSVDataProcessor;
-import com.ferguson.feedengine.batch.step.preparation.CSVDataWriter;
+import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
+import com.ferguson.feedengine.batch.utils.Cache;
 import com.ferguson.feedengine.data.model.BaseBean;
-import com.ferguson.feedengine.data.model.BestSellerBean;
+import com.ferguson.feedengine.data.model.TempBestSellerBean;
 import com.ferguson.feedengine.data.model.SalesRankBean;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -76,16 +76,15 @@ public class FullFeedJobConfiguration {
 
     @Bean("slaveStep")
     public Step slaveStep() {
-        return steps.get("slaveStep").<BaseBean, BaseBean>chunk(30)
-                .reader(csvLineReader(null))
-                .processor(csvDataProcessor())
-                .writer(csvDataWriter())
+        return steps.get("slaveStep")
+                .tasklet(csvTasklet())
                 .build();
     }
 
     @Bean
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setMaxPoolSize(2);
         taskExecutor.setMaxPoolSize(2);
         taskExecutor.setCorePoolSize(2);
         taskExecutor.setQueueCapacity(2);
@@ -105,7 +104,7 @@ public class FullFeedJobConfiguration {
         switch (filename) {
             case "best_seller_data.csv":
                 tokens = new String[]{"skuId", "branch", "rank"};
-                iclass = BestSellerBean.class;
+                iclass = TempBestSellerBean.class;
                 break;
             case "sales_rank_data.csv":
                 tokens = new String[]{"skuId", "sales"};
@@ -128,17 +127,10 @@ public class FullFeedJobConfiguration {
     }
 
     @StepScope
-    @Bean("csvDataProcessor")
-    public ItemProcessor<BaseBean, BaseBean> csvDataProcessor() {
-        return new CSVDataProcessor();
+    @Bean("csvTasklet")
+    public CsvTasklet csvTasklet() {
+        return new CsvTasklet(csvLineReader(null));
     }
-
-    @StepScope
-    @Bean("csvDataWriter")
-    public ItemWriter<BaseBean> csvDataWriter() {
-        return new CSVDataWriter();
-    }
-    
 
     /**
      * "StiboFileFeed" Step
@@ -222,5 +214,10 @@ public class FullFeedJobConfiguration {
           .on("*").to(generateDataSourceStep())
           .end()
           .build();
+    }
+
+    @Bean
+    public Cache cache() {
+        return new Cache();
     }
 }

@@ -2,32 +2,23 @@ package com.ferguson.feedengine.data.model;
 
 import org.springframework.data.elasticsearch.annotations.Document;
 
+import java.util.Map;
+
 @Document(indexName = "best_seller")
 public class BestSellerBean extends BaseBean {
 
-    private String branch;
-    private String rank;
+    private Map<String, String> skuBranchSales;
 
-    public BestSellerBean(String skuId, String branch, String rank) {
+    public BestSellerBean(String skuId, Map<String, String> branchRankMap) {
         super(skuId);
-        this.branch = branch;
-        this.rank = rank;
+        this.skuBranchSales = branchRankMap;
     }
 
-
-    public String getBranch() {
-        return branch;
+    public Map<String, String> getSkuBranchSales() {
+        return skuBranchSales;
     }
 
-    public void setBranch(String branch) {
-        this.branch = branch;
-    }
-
-    public String getRank() {
-        return rank;
-    }
-
-    public void setRank(String rank) {
-        this.rank = rank;
+    public void setSkuBranchSales(Map<String, String> skuBranchSales) {
+        this.skuBranchSales = skuBranchSales;
     }
 }
