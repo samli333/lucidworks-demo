@@ -1,7 +1,6 @@
 package com.ferguson.feedengine.batch;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.batch.core.Job;
@@ -36,6 +35,7 @@ import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
+import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import com.ferguson.feedengine.data.model.BaseBean;
 import com.ferguson.feedengine.data.model.ESBean;
 import com.ferguson.feedengine.data.model.SalesRankBean;
@@ -223,7 +223,7 @@ public class FullFeedJobConfiguration {
     }
 
     @Bean
-    public Map<Object, Object> feedEngineCache() {
-        return new HashMap<>();
+    public FeedEngineCache feedEngineCache() {
+        return new FeedEngineCache();
     }
 }

@@ -1,6 +1,7 @@
 package com.ferguson.feedengine.batch.step.stibofeed;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
@@ -24,6 +25,9 @@ public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListe
     @Qualifier("categoryBeanRepository")
 	private ElasticsearchRepository categoryBeanRepository;
 	
+	@Autowired
+	@Qualifier("feedEngineCache")
+	private Map<Object, Object> cache;
 	
 	@Override
 	public void beforeStep(StepExecution stepExecution) {
