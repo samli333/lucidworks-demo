@@ -3,6 +3,7 @@ package com.ferguson.feedengine.batch.step.stibofeed;
 import java.util.List;
 import java.util.Map;
 
+import com.ferguson.feedengine.data.model.AssetBean;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
@@ -16,6 +17,10 @@ import com.ferguson.feedengine.data.model.CategoryBean;
 import com.ferguson.feedengine.data.model.ESBean;
 
 public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListener {
+
+	@Autowired
+	@Qualifier("assetBeanRepository")
+	private ElasticsearchRepository assetBeanRepository;
 
 	@Autowired
     @Qualifier("attributeBeanRepository")
@@ -36,6 +41,9 @@ public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListe
 	@Override
 	public void write(List<? extends ESBean> elements) throws Exception {
 		for (ESBean element : elements) {
+			if (element instanceof AssetBean) {
+				assetBeanRepository.save(element);
+			}
 			if (element instanceof AttributeBean) {
 				attributeBeanRepository.save(element);
 			}
