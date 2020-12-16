@@ -3,8 +3,10 @@ package com.ferguson.feedengine.batch.step.preparation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
@@ -68,18 +70,28 @@ public class CsvTasklet implements Tasklet, StepExecutionListener {
                 Map<String, List<BaseBean>> map = items.stream().collect(Collectors.groupingBy(i -> i.getSkuId()));
                 List<BaseBean> lItems = map.entrySet().stream().map(e -> {
                     Map<String, String> collect = e.getValue().stream().collect(Collectors.toMap(bean -> {
-                        TempBestSellerBean b = (TempBestSellerBean) bean;
-                        return b.getBranch() + "_sales";
+                        TempBestSellerBean lBean = (TempBestSellerBean) bean;
+                        return lBean.getBranch() + "_sales";
                     }, bean -> ((TempBestSellerBean) bean).getRank()));
                     BestSellerBean bean = new BestSellerBean(e.getKey(), collect);
                     return bean;
                 }).collect(Collectors.toList());
-                cache.put(filename, lItems);
                 bestSellerRepository.saveAll(lItems);
+
+                Map<String, BaseBean> bestSellerCache = lItems.stream().collect(Collectors.toMap(bean -> {
+                    BestSellerBean lBean = (BestSellerBean) bean;
+                    return FeedEngineCache.CACHE_KEY_PREFIX_BEST_SELLER + lBean.getSkuId();
+                }, Function.identity()));
+                cache.putAll(bestSellerCache);
                 break;
             case "sales_rank_data.csv":
-                cache.put(filename, items);
                 salesRankRepository.saveAll(items);
+
+                Map<String, BaseBean> salesRankCache = items.stream().collect(Collectors.toMap(bean -> {
+                    BestSellerBean lBean = (BestSellerBean) bean;
+                    return FeedEngineCache.CACHE_KEY_PREFIX_SALES_RANK + lBean.getSkuId();
+                }, Function.identity()));
+                cache.putAll(salesRankCache);
                 break;
             default:
                 break;
