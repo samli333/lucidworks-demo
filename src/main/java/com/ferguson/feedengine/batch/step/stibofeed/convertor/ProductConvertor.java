@@ -69,7 +69,8 @@ public class ProductConvertor implements CatalogDataCovertor {
 				}
 			}
 		}
-		// TODO Auto-generated method stub
+		
+		product.getOtherProperties().putAll(input);
 		return product;
 	}
 

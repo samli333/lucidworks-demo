@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.elasticsearch.annotations.Document;
+
+@Document(indexName = "product")
 public class ProductBean implements ESBean {
 
 	private String id;
