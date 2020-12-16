@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.stibofeed;
+package com.ferguson.feedengine.batch.step.stibofeed.convertor;
 
 import java.util.List;
 import java.util.Map;

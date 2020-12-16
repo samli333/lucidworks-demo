@@ -8,6 +8,7 @@ import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.ferguson.feedengine.batch.step.stibofeed.convertor.CatalogDataCovertor;
 import com.ferguson.feedengine.batch.utils.XMLStreamParser;
 import com.ferguson.feedengine.data.model.ESBean;
 
