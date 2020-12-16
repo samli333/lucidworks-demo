@@ -1,7 +1,6 @@
 package com.ferguson.feedengine.batch.step.stibofeed;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
@@ -11,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
+import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import com.ferguson.feedengine.data.model.AttributeBean;
 import com.ferguson.feedengine.data.model.CategoryBean;
 import com.ferguson.feedengine.data.model.ESBean;
@@ -27,7 +27,7 @@ public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListe
 	
 	@Autowired
 	@Qualifier("feedEngineCache")
-	private Map<Object, Object> cache;
+	private FeedEngineCache cache;
 	
 	@Override
 	public void beforeStep(StepExecution stepExecution) {
@@ -37,11 +37,15 @@ public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListe
 	public void write(List<? extends ESBean> elements) throws Exception {
 		for (ESBean element : elements) {
 			if (element instanceof AttributeBean) {
+				cache.put(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + element.getId(), element);
 				attributeBeanRepository.save(element);
 			}
 			if (element instanceof CategoryBean) {
+				cache.put(FeedEngineCache.CACHE_KEY_PREFIX_CATEGORY + element.getId(), element);
 				categoryBeanRepository.save(element);
 			}
+			
+			
 		}
 		
 	}

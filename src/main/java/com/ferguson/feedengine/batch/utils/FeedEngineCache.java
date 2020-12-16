@@ -5,4 +5,6 @@ import java.util.HashMap;
 public class FeedEngineCache extends HashMap<Object, Object>{
 
 	public static final String CACHE_KEY_PREFIX_ATTRIBUTE = "attribute_";
+	
+	public static final String CACHE_KEY_PREFIX_CATEGORY = "category_";
 }
