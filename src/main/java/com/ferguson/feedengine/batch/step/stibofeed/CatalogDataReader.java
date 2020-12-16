@@ -53,7 +53,7 @@ public class CatalogDataReader implements ItemReader<Map>, StepExecutionListener
 
 	@Override
 	public Map read() throws Exception {
-		this.stepExecution.setExitStatus(new ExitStatus("Complete But Skip Product Feed"));
+//		this.stepExecution.setExitStatus(new ExitStatus("Complete But Skip Product Feed"));
 		return parser.parse(reader);
 	}
 

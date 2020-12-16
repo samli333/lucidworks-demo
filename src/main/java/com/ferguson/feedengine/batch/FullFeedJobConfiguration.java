@@ -10,6 +10,7 @@ import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
 import com.ferguson.feedengine.batch.utils.Cache;
 import com.ferguson.feedengine.data.model.BaseBean;
+import com.ferguson.feedengine.data.model.ESBean;
 import com.ferguson.feedengine.data.model.TempBestSellerBean;
 import com.ferguson.feedengine.data.model.SalesRankBean;
 import org.springframework.batch.core.Job;
@@ -144,7 +145,7 @@ public class FullFeedJobConfiguration {
      */
     @Bean
     protected Step stiboFileFeedStep() {
-        return steps.get("stiboFileFeedStep").<Map, Map> chunk(30)
+        return steps.get("stiboFileFeedStep").<Map, ESBean> chunk(30)
           .reader(catalogDataReaderReader())
           .processor(catalogDataProcessor())
           .writer(catalogDataWriter())
@@ -158,19 +159,19 @@ public class FullFeedJobConfiguration {
     }
 
     @Bean
-    public ItemProcessor<Map, Map> catalogDataProcessor() {
+    public ItemProcessor<Map, ESBean> catalogDataProcessor() {
         return new CatalogDataProcessor();
     }
 
     @Bean
-    public ItemWriter<Map> catalogDataWriter() {
+    public ItemWriter<ESBean> catalogDataWriter() {
         return new CatalogDataWriter();
     }
     
     
     @Bean
     protected Step stiboFileFeedBackup() {
-        return steps.get("StiboFileFeedBackup").<Map, Map> chunk(30)
+        return steps.get("StiboFileFeedBackup").<Map, ESBean> chunk(30)
                 .reader(catalogDataReaderReader())
                 .processor(catalogDataProcessor())
                 .writer(catalogDataWriter())

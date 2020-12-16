@@ -44,6 +44,8 @@ public class XMLStreamParser {
 	private Set<String> normalEndElementsAttribute;
 	@Value("#{'${list.end.elements.attribute}'.split(',')}")
 	private Set<String> listEndElementsAttribute;
+	@Value("#{'${list.ref.end.element.attribute}'.split(',')}")
+	private Set<String> listRefEndElementAttribute;
 	@Value("#{'${root.elements.attribute}'.split(',')}")
 	private Set<String> rootElementsAttribute;
 	
@@ -58,6 +60,8 @@ public class XMLStreamParser {
 	private Set<String> normalEndElementsClassification;
 	@Value("#{'${list.end.elements.classification}'.split(',')}")
 	private Set<String> listEndElementsClassification;
+	@Value("#{'${list.ref.end.element.classification}'.split(',')}")
+	private Set<String> listRefEndElementClassification;
 	@Value("#{'${root.elements.classification}'.split(',')}")
 	private Set<String> rootElementsClassification;
 	
@@ -72,6 +76,8 @@ public class XMLStreamParser {
 	private Set<String> normalEndElementsAsset;
 	@Value("#{'${list.end.elements.asset}'.split(',')}")
 	private Set<String> listEndElementsAsset;
+	@Value("#{'${list.ref.end.element.asset}'.split(',')}")
+	private Set<String> listRefEndElementAsset;
 	@Value("#{'${root.elements.asset}'.split(',')}")
 	private Set<String> rootElementsAsset;
 	
@@ -85,6 +91,8 @@ public class XMLStreamParser {
 	private Set<String> normalEndElementsProduct;
 	@Value("#{'${list.end.elements.product}'.split(',')}")
 	private Set<String> listEndElementsProduct;
+	@Value("#{'${list.ref.end.element.product}'.split(',')}")
+	private Set<String> listRefEndElementProduct;
 	@Value("#{'${root.elements.product}'.split(',')}")
 	private Set<String> rootElementsProduct;
 	
@@ -100,6 +108,8 @@ public class XMLStreamParser {
 	private Set<String> listEndElements;
 
 	private Set<String> rootElements;
+	
+	private Set<String> listRefEndElement;
 
 	public Stack<Map> parseContext = new Stack<>();
 
@@ -123,10 +133,16 @@ public class XMLStreamParser {
 				EndElement endElement = nextEvent.asEndElement();
 				String elementName = endElement.getName().getLocalPart();
 				if (normalEndElements.contains(elementName)) {
-					execute = maintainNormalEndElement(elementName);
+					execute = null != maintainNormalEndElement(elementName);
 				}
 				if (listEndElements.contains(elementName)) {
-					execute = maintainListEndElement(elementName);
+					execute = null != maintainListEndElement(elementName);
+				}
+				if (listRefEndElement.contains(elementName)) {
+					Map entity = maintainlistRefEndElement(elementName);
+					if (null != entity) {
+						return entity;
+					}
 				}
 				if (!execute && rootElements.contains(elementName)) {
 					Map entity = null;
@@ -181,6 +197,12 @@ public class XMLStreamParser {
 		rootElements.addAll(rootElementsClassification);
 		rootElements.addAll(rootElementsAsset);
 		rootElements.addAll(rootElementsProduct);
+	
+		listRefEndElement = new HashSet<>();
+		listRefEndElement.addAll(listRefEndElementAttribute);
+		listRefEndElement.addAll(listRefEndElementClassification);
+		listRefEndElement.addAll(listRefEndElementAsset);
+		listRefEndElement.addAll(listRefEndElementProduct);
 	}
 
 	private XMLEvent parseElementWithTextValueOnly(XMLEventReader reader, String elementName)
@@ -227,26 +249,26 @@ public class XMLStreamParser {
 		return nextEvent;
 	}
 
-	private boolean maintainNormalEndElement(String elementName) {
+	private Map maintainNormalEndElement(String elementName) {
 		Map currentElement = null;
 		Map parentElement = null;
 		currentElement = parseContext.pop();
 		if (parseContext.isEmpty()) {
 			parseContext.push(currentElement);
-			return false;
+			return null;
 		}
 		parentElement = parseContext.peek();
 		parentElement.put(elementName, currentElement);
-		return true;
+		return currentElement;
 	}
-
-	private boolean maintainListEndElement(String subListName) {
+	
+	private Map maintainListEndElement(String subListName) {
 		Map currentElement = null;
 		Map parentElement = null;
 		currentElement = parseContext.pop();
 		if (parseContext.isEmpty()) {
 			parseContext.push(currentElement);
-			return false;
+			return null;
 		}
 		parentElement = parseContext.peek();
 		List usbList = null;
@@ -257,7 +279,27 @@ public class XMLStreamParser {
 		}
 		usbList = (List) parentElement.get(listName);
 		usbList.add(currentElement);
-		return true;
+		return currentElement;
+	}
+	
+	private Map maintainlistRefEndElement(String elementName) {
+		Map currentElement = null;
+		Map parentElement = null;
+		currentElement = parseContext.pop();
+		if (parseContext.isEmpty()) {
+			parseContext.push(currentElement);
+			return null;
+		}
+		parentElement = parseContext.peek();
+		List usbList = null;
+		String listName = elementName + "s";
+		if (null == parentElement.get(listName)) {
+			usbList = new ArrayList();
+			parentElement.put(listName, usbList);
+		}
+		usbList = (List) parentElement.get(listName);
+		usbList.add(currentElement.get("ID"));
+		return currentElement;
 	}
 
 }
