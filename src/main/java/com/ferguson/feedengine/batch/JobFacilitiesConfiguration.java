@@ -49,8 +49,4 @@ public class JobFacilitiesConfiguration {
 //		return new JdbcTemplate(dataSource);
 //	}
 	
-	@Bean
-	public JobLauncherTestUtils jobLauncherTestUtils() {
-		return new JobLauncherTestUtils();
-	}
 }

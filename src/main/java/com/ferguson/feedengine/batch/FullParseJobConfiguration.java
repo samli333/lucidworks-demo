@@ -3,6 +3,7 @@ package com.ferguson.feedengine.batch;
 import java.io.IOException;
 import java.util.Map;
 
+import org.springframework.batch.core.ItemWriteListener;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -34,6 +35,7 @@ import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
 import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriteListener;
 import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
 import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import com.ferguson.feedengine.data.model.BaseBean;
@@ -42,7 +44,7 @@ import com.ferguson.feedengine.data.model.SalesRankBean;
 import com.ferguson.feedengine.data.model.TempBestSellerBean;
 
 @Configuration
-public class FullFeedJobConfiguration {
+public class FullParseJobConfiguration {
     @Autowired
     ResourcePatternResolver resoursePatternResolver;
 
@@ -150,10 +152,11 @@ public class FullFeedJobConfiguration {
      */
     @Bean
     protected Step stiboFileFeedStep() {
-        return steps.get("stiboFileFeedStep").<Map, ESBean> chunk(30)
+        return steps.get("stiboFileFeedStep").<Map, ESBean> chunk(1000)
           .reader(catalogDataReaderReader())
           .processor(catalogDataProcessor())
           .writer(catalogDataWriter())
+//          .listener(catalogDataWriteListener())
           .build();
     }
     
@@ -175,50 +178,27 @@ public class FullFeedJobConfiguration {
     
     
     @Bean
+    public ItemWriteListener<ESBean> catalogDataWriteListener() {
+        return new CatalogDataWriteListener();
+    }
+    
+    
+    @Bean
     protected Step stiboFileFeedBackup() {
-        return steps.get("StiboFileFeedBackup").<Map, ESBean> chunk(30)
+        return steps.get("StiboFileFeedBackup").<Map, ESBean> chunk(1000)
                 .reader(catalogDataReaderReader())
                 .processor(catalogDataProcessor())
-                .writer(catalogDataWriter())
+                .writer(catalogDataWriter()).listener(catalogDataWriteListener())
           .build();
     }
     
     
     @Bean
-    protected Step generateDataSourceStep() {
-        return steps.get("generateDataSource").<Map, Map> chunk(30)
-          .reader(dataSourceReader())
-          .processor(dataSourceProcessor())
-          .writer(dataSourceWriter())
-          .build();
-    }
-    
-    @Bean
-    public ItemReader<Map> dataSourceReader() {
-        return new DataSourceReader();
-    }
-
-    @Bean
-    public ItemProcessor<Map, Map> dataSourceProcessor() {
-        return new DataSourceProcessor();
-    }
-
-    @Bean
-    public ItemWriter<Map> dataSourceWriter() {
-        return new DataSourceWriter();
-    }
-
-    @Bean
-    public Job fullFeedJob() {
-        return jobs
-          .get("fullFeed")
+    public Job fullParseJob() {
+        return jobs.get("fullParse")
           .start(preparationStep())
-          .next(stiboFileFeedStep())
-          .on("Complete But Skip Product Feed").to(stiboFileFeedBackup())
-          .on("*").to(generateDataSourceStep())
-          .from(stiboFileFeedStep())
-          .on("*").to(generateDataSourceStep())
-          .end()
+          .next(stiboFileFeedStep()).on("Complete But Skip Product Feed").to(stiboFileFeedBackup())
+          .from(stiboFileFeedStep()).end()
           .build();
     }
 

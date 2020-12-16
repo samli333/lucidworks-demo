@@ -76,7 +76,7 @@ public class CsvTasklet implements Tasklet, StepExecutionListener {
                     BestSellerBean bean = new BestSellerBean(e.getKey(), collect);
                     return bean;
                 }).collect(Collectors.toList());
-                bestSellerRepository.saveAll(lItems);
+//                bestSellerRepository.saveAll(lItems);
 
                 Map<String, BaseBean> bestSellerCache = lItems.stream().collect(Collectors.toMap(bean -> {
                     BestSellerBean lBean = (BestSellerBean) bean;
@@ -85,7 +85,7 @@ public class CsvTasklet implements Tasklet, StepExecutionListener {
                 cache.putAll(bestSellerCache);
                 break;
             case "sales_rank_data.csv":
-                salesRankRepository.saveAll(items);
+//                salesRankRepository.saveAll(items);
 
                 Map<String, BaseBean> salesRankCache = items.stream().collect(Collectors.toMap(bean -> {
                     return FeedEngineCache.CACHE_KEY_PREFIX_SALES_RANK + bean.getSkuId();

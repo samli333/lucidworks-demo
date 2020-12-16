@@ -48,15 +48,15 @@ public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListe
 	public void write(List<? extends ESBean> elements) throws Exception {
 		for (ESBean element : elements) {
 			if (element instanceof AssetBean) {
-				assetBeanRepository.save(element);
+//				assetBeanRepository.save(element);
 			}
 			if (element instanceof AttributeBean) {
 				cache.put(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + element.getId(), element);
-				attributeBeanRepository.save(element);
+//				attributeBeanRepository.save(element);
 			}
 			if (element instanceof CategoryBean) {
 				cache.put(FeedEngineCache.CACHE_KEY_PREFIX_CATEGORY + element.getId(), element);
-				categoryBeanRepository.save(element);
+//				categoryBeanRepository.save(element);
 			}
 			if (element instanceof ProductBean) {
 				productBeanRepository.save(element);

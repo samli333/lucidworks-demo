@@ -48,7 +48,6 @@ public class CatalogDataReader implements ItemReader<Map>, StepExecutionListener
 		} catch (XMLStreamException | IOException e) {
 			// TODO Auto-generated catch block
 		}
-		System.out.println("reader started");
 	}
 
 	@Override
@@ -59,7 +58,6 @@ public class CatalogDataReader implements ItemReader<Map>, StepExecutionListener
 
 	@Override
 	public ExitStatus afterStep(StepExecution stepExecution) {
-		System.out.println("reader closed");
 		try {
 			reader.close();
 		} catch (XMLStreamException e) {
