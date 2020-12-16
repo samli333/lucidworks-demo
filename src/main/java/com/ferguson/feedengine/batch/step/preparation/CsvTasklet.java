@@ -1,9 +1,10 @@
 package com.ferguson.feedengine.batch.step.preparation;
 
-import com.ferguson.feedengine.batch.utils.Cache;
-import com.ferguson.feedengine.data.model.BaseBean;
-import com.ferguson.feedengine.data.model.BestSellerBean;
-import com.ferguson.feedengine.data.model.TempBestSellerBean;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
@@ -17,10 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.ferguson.feedengine.data.model.BaseBean;
+import com.ferguson.feedengine.data.model.BestSellerBean;
+import com.ferguson.feedengine.data.model.TempBestSellerBean;
 
 public class CsvTasklet implements Tasklet, StepExecutionListener {
 
@@ -33,7 +33,8 @@ public class CsvTasklet implements Tasklet, StepExecutionListener {
     private ElasticsearchRepository salesRankRepository;
 
     @Autowired
-    private Cache cache;
+    @Qualifier("feedEngineCache")
+    private Map<Object, Object> cache;
 
     private String filename;
 
