@@ -1,24 +1,19 @@
 package com.ferguson.feedengine.batch;
 
-import com.ferguson.feedengine.batch.partition.MultiResourceFilesPartitioner;
-import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
-import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
-import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
-import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
-import com.ferguson.feedengine.batch.utils.Cache;
-import com.ferguson.feedengine.data.model.BaseBean;
-import com.ferguson.feedengine.data.model.ESBean;
-import com.ferguson.feedengine.data.model.TempBestSellerBean;
-import com.ferguson.feedengine.data.model.SalesRankBean;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.batch.item.*;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.ParseException;
+import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.mapping.RecordFieldSetMapper;
@@ -33,8 +28,18 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.io.IOException;
-import java.util.Map;
+import com.ferguson.feedengine.batch.partition.MultiResourceFilesPartitioner;
+import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
+import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
+import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
+import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
+import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
+import com.ferguson.feedengine.data.model.BaseBean;
+import com.ferguson.feedengine.data.model.ESBean;
+import com.ferguson.feedengine.data.model.SalesRankBean;
+import com.ferguson.feedengine.data.model.TempBestSellerBean;
 
 @Configuration
 public class FullFeedJobConfiguration {
@@ -218,7 +223,7 @@ public class FullFeedJobConfiguration {
     }
 
     @Bean
-    public Cache cache() {
-        return new Cache();
+    public Map<Object, Object> feedEngineCache() {
+        return new HashMap<>();
     }
 }
