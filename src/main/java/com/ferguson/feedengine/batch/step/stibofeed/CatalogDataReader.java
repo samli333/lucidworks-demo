@@ -19,6 +19,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 import com.ferguson.feedengine.batch.utils.XMLStreamParser;
+import com.ferguson.feedengine.batch.utils.XMLStreamParser.Operation;
 
 public class CatalogDataReader implements ItemReader<Map>, StepExecutionListener {
 
@@ -53,7 +54,7 @@ public class CatalogDataReader implements ItemReader<Map>, StepExecutionListener
 	@Override
 	public Map read() throws Exception {
 //		this.stepExecution.setExitStatus(new ExitStatus("Complete But Skip Product Feed"));
-		return parser.parse(reader);
+		return parser.parse(reader, Operation.PARSE_PRODUCT_ONLY);
 	}
 
 	@Override

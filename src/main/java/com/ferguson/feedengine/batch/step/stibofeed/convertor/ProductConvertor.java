@@ -39,10 +39,13 @@ public class ProductConvertor implements CatalogDataCovertor {
 						continue;
 					}
 					String value = valuebean.get("_value_");
-					AttributeBean attribute = (AttributeBean) cache.get(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + attributeId);
+					Map attributeCache = (Map)cache.get(FeedEngineCache.CACHE_DISTRICT_ATTRIBUTE);
 					String key = attributeId;
-					if ( null != attribute.getName()) {
-						key = attribute.getName();
+					if (null != attributeCache) {
+						AttributeBean attribute = (AttributeBean) attributeCache.get(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + attributeId);
+						if (null != attribute && null != attribute.getName()) {
+							key = attribute.getName();
+						}
 					}
 					product.getValues().put(key, value);
 				}
@@ -56,10 +59,15 @@ public class ProductConvertor implements CatalogDataCovertor {
 					}
 					List<Map> multiValues = (List<Map>)multiValueBean.get("Values");
 					if (null != multiValues) {
-						AttributeBean attribute = (AttributeBean) cache.get(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + attributeId);
 						String key = attributeId;
-						if ( null != attribute.getName()) {
-							key = attribute.getName();
+						
+						Map attributeCache = (Map)cache.get(FeedEngineCache.CACHE_DISTRICT_ATTRIBUTE);
+						if (null != attributeCache) {
+							AttributeBean attribute = (AttributeBean) attributeCache.get(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + attributeId);
+							
+							if (null != attribute && null != attribute.getName()) {
+								key = attribute.getName();
+							}
 						}
 						List<String> value = multiValues.stream().filter(multiValue -> multiValue != null).map(multiValue -> {
 							return (String)multiValue.get("_value_");

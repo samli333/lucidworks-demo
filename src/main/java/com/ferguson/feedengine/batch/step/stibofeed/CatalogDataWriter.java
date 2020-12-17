@@ -1,6 +1,7 @@
 package com.ferguson.feedengine.batch.step.stibofeed;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.ferguson.feedengine.data.model.AssetBean;
 import org.springframework.batch.core.ExitStatus;
@@ -10,6 +11,7 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
+import org.springframework.util.CollectionUtils;
 
 import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import com.ferguson.feedengine.data.model.AttributeBean;
@@ -46,24 +48,26 @@ public class CatalogDataWriter implements ItemWriter<ESBean>, StepExecutionListe
 
 	@Override
 	public void write(List<? extends ESBean> elements) throws Exception {
-		for (ESBean element : elements) {
-			if (element instanceof AssetBean) {
-//				assetBeanRepository.save(element);
-			}
-			if (element instanceof AttributeBean) {
-				cache.put(FeedEngineCache.CACHE_KEY_PREFIX_ATTRIBUTE + element.getId(), element);
-//				attributeBeanRepository.save(element);
-			}
-			if (element instanceof CategoryBean) {
-				cache.put(FeedEngineCache.CACHE_KEY_PREFIX_CATEGORY + element.getId(), element);
-//				categoryBeanRepository.save(element);
-			}
-			if (element instanceof ProductBean) {
-				productBeanRepository.save(element);
-			}
-			
-		}
 		
+		if (null == elements) {
+			return;
+		}
+		List<ESBean> assetBeans = elements.stream().filter(element -> {return element instanceof AssetBean;}).collect(Collectors.toList());
+		List<ESBean> attributeBeans = elements.stream().filter(element -> {return element instanceof AttributeBean;}).collect(Collectors.toList());
+		List<ESBean> categoryBeans = elements.stream().filter(element -> {return element instanceof CategoryBean;}).collect(Collectors.toList());
+		List<ESBean> productBeans = elements.stream().filter(element -> {return element instanceof ProductBean;}).collect(Collectors.toList());
+		if (!CollectionUtils.isEmpty(assetBeans)) {
+//			assetBeanRepository.saveAll(assetBeans);
+		}
+		if (!CollectionUtils.isEmpty(attributeBeans)) {
+//			attributeBeanRepository.saveAll(attributeBeans);
+		}
+		if (!CollectionUtils.isEmpty(categoryBeans)) {
+//			categoryBeanRepository.saveAll(categoryBeans);
+		}
+		if (!CollectionUtils.isEmpty(productBeans)) {
+			productBeanRepository.saveAll(productBeans);
+		}
 	}
 
 	@Override
