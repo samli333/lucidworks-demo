@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.stibofeed.convertor;
+package com.ferguson.feedengine.batch.step.convertor;
 
 import java.util.HashMap;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.preparation;
+package com.ferguson.feedengine.batch.step.loadcache;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,7 +30,7 @@ import com.ferguson.feedengine.data.model.TempBestSellerBean;
 
 import io.micrometer.core.instrument.util.StringUtils;
 
-public class CacheItemReader implements ItemReader<Object>, StepExecutionListener, JobConstants{
+public class LoadCacheReader implements ItemReader<Object>, StepExecutionListener, JobConstants{
 
 	@Autowired
 	private XMLStreamParser parser;
@@ -51,7 +51,7 @@ public class CacheItemReader implements ItemReader<Object>, StepExecutionListene
 	public void beforeStep(StepExecution stepExecution) {
 
 		this.stepExecution = stepExecution;
-		String fileName = this.stepExecution.getExecutionContext().getString(STEP_PARAM_NAME_FILE_NAME);
+		String fileName = this.stepExecution.getExecutionContext().getString(STEP_PARAM_NAME_TASK);
 		System.out.println("----------------" +this + Thread.currentThread().getName() + fileName);
 		if (StringUtils.isBlank(fileName)) {
 			throw new IllegalArgumentException("file name must be define.");

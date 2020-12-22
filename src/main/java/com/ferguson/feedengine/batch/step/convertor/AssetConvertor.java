@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.stibofeed.convertor;
+package com.ferguson.feedengine.batch.step.convertor;
 
 import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import com.ferguson.feedengine.batch.utils.XMLStreamParser;

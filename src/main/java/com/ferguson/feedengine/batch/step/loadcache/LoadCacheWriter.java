@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.preparation;
+package com.ferguson.feedengine.batch.step.loadcache;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +19,7 @@ import com.ferguson.feedengine.data.model.CategoryBean;
 import com.ferguson.feedengine.data.model.ESBean;
 import com.ferguson.feedengine.data.model.ProductBean;
 
-public class CacheItemWriter implements ItemWriter<Object>, StepExecutionListener {
+public class LoadCacheWriter implements ItemWriter<Object>, StepExecutionListener {
 
 	@Override
 	public void beforeStep(StepExecution stepExecution) {

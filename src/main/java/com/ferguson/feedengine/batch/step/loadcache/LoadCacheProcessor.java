@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.preparation;
+package com.ferguson.feedengine.batch.step.loadcache;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import com.ferguson.feedengine.batch.step.stibofeed.convertor.CatalogDataCovertor;
+import com.ferguson.feedengine.batch.step.convertor.CatalogDataCovertor;
 import com.ferguson.feedengine.batch.utils.FeedEngineCache;
 import com.ferguson.feedengine.batch.utils.XMLStreamParser;
 import com.ferguson.feedengine.data.model.BestSellerBean;
@@ -18,7 +18,7 @@ import com.ferguson.feedengine.data.model.ESBean;
 import com.ferguson.feedengine.data.model.SalesRankBean;
 import com.ferguson.feedengine.data.model.TempBestSellerBean;
 
-public class CacheItemProcessor implements ItemProcessor<Object, Object>, StepExecutionListener {
+public class LoadCacheProcessor implements ItemProcessor<Object, Object>, StepExecutionListener {
 
 	public static final String CONVERTOR_SUFFIX = "Convertor";
 	
