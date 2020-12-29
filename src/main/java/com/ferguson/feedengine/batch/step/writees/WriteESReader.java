@@ -75,7 +75,8 @@ public class WriteESReader implements ItemReader<Object>, StepExecutionListener,
 		if (null != reader) {
 			return parser.parse(reader, Operation.PARSE_PRODUCT_ONLY);
 		}
-		while (iterator.hasNext()) {
+		
+		while (null != iterator && iterator.hasNext()) {
 			Map.Entry next = iterator.next();
 			if (null == next) {
 				continue;

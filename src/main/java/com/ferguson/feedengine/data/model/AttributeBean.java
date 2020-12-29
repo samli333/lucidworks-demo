@@ -7,15 +7,21 @@ import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
 
 @Document(indexName = "attribute")
 public class AttributeBean implements ESBean{
 	@Id
 	private String id;
+	@Field(index=false)
 	private String Name;
+	@Field(index=false)
 	private List<String> attributeGroupLinks = new ArrayList<>();
+	@Field(index=false)
 	private List<String> userTypeLinks = new ArrayList<>();
+	@Field(index=false)
 	private Map<String, String> otherProperties = new HashMap<>();
+	@Field(index=false)
 	private ValidationBean validation;
 
 	public String getId() {

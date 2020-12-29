@@ -7,14 +7,18 @@ import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
 
 @Document(indexName = "category")
 public class CategoryBean implements ESBean {
 
 	@Id
 	private String id;
+	@Field(index=false)
 	private String name;
+	@Field(index=false)
 	private List<String> categories = new ArrayList<>();
+	@Field(index=false)
 	private Map<String, String> otherProperties = new HashMap<>();
 
 	public String getId() {

@@ -4,15 +4,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
 
 @Document(indexName = "product")
 public class ProductBean implements ESBean {
 
+	@Id
 	private String id;
+	@Field(index=false)
 	private String name;
+	@Field(index=false)
 	private Map<String, String> values = new HashMap<>();
+	@Field(index=false)
 	private Map<String, List<String>> multiValue = new HashMap<>();
+	@Field(index=false)
 	private Map<String, String> otherProperties = new HashMap<>();
 	
 	public String getId() {
