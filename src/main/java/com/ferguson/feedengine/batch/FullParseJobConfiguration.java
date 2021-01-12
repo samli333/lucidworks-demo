@@ -98,7 +98,7 @@ public class FullParseJobConfiguration {
 
 	@Bean("loadCacheSlaveStep")
 	public Step loadCacheSlaveStep() {
-		return steps.get("loadCacheSlaveStep").<Object, Object>chunk(5000).reader(cacheItemReader())
+		return steps.get("loadCacheSlaveStep").<Object, Object>chunk(5).reader(cacheItemReader())
 				.processor(cacheItemProcessor()).writer(cacheItemWriter()).build();
 	}
 
@@ -108,13 +108,15 @@ public class FullParseJobConfiguration {
 		return new LoadCacheReader();
 	}
 
+	@StepScope
 	@Bean
-	public ItemProcessor<Object, Object> cacheItemProcessor() {
+	public LoadCacheProcessor cacheItemProcessor() {
 		return new LoadCacheProcessor();
 	}
 
+	@StepScope
 	@Bean
-	public ItemWriter<Object> cacheItemWriter() {
+	public LoadCacheWriter cacheItemWriter() {
 		return new LoadCacheWriter();
 	}
 
@@ -201,13 +203,15 @@ public class FullParseJobConfiguration {
 		return new WriteESReader();
 	}
 
+	@StepScope
 	@Bean
-	public ItemProcessor<Object, Object> writeESProcessor() {
+	public WriteESProcessor writeESProcessor() {
 		return new WriteESProcessor();
 	}
 
+	@StepScope
 	@Bean
-	public ItemWriter<Object> writeESWriter() {
+	public WriteESWriter writeESWriter() {
 		return new WriteESWriter();
 	}
 
