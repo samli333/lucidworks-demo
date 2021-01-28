@@ -2,6 +2,7 @@ package com.ferguson.feedengine.data.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,8 +13,11 @@ import java.util.Map;
 public class AssetBean implements ESBean {
     @Id
     private String id;
+    @Field(index=false)
     private String Name;
+    @Field(index=false)
     private List<ValueBean> values = new ArrayList<>();
+    @Field(index=false)
     private Map<String, String> otherProperties = new HashMap<>();
 
     public String getId() {

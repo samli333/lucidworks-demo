@@ -1,7 +1,11 @@
 package com.ferguson.feedengine.batch;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.batch.core.ItemWriteListener;
 import org.springframework.batch.core.Job;
@@ -9,201 +13,221 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
-import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.mapping.DefaultLineMapper;
-import org.springframework.batch.item.file.mapping.RecordFieldSetMapper;
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.util.CollectionUtils;
 
-import com.ferguson.feedengine.batch.partition.MultiResourceFilesPartitioner;
-import com.ferguson.feedengine.batch.step.generate.DataSourceProcessor;
-import com.ferguson.feedengine.batch.step.generate.DataSourceReader;
-import com.ferguson.feedengine.batch.step.generate.DataSourceWriter;
-import com.ferguson.feedengine.batch.step.preparation.CsvTasklet;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataProcessor;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataReader;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriteListener;
-import com.ferguson.feedengine.batch.step.stibofeed.CatalogDataWriter;
+import com.ferguson.feedengine.batch.partition.DefaultPartitioner;
+import com.ferguson.feedengine.batch.step.loadcache.LoadCacheProcessor;
+import com.ferguson.feedengine.batch.step.loadcache.LoadCacheReader;
+import com.ferguson.feedengine.batch.step.loadcache.LoadCacheWriter;
+import com.ferguson.feedengine.batch.step.writees.WriteESProcessor;
+import com.ferguson.feedengine.batch.step.writees.WriteESReader;
+import com.ferguson.feedengine.batch.step.writees.CatalogDataWriteListener;
+import com.ferguson.feedengine.batch.step.writees.WriteESWriter;
 import com.ferguson.feedengine.batch.utils.FeedEngineCache;
-import com.ferguson.feedengine.data.model.BaseBean;
 import com.ferguson.feedengine.data.model.ESBean;
-import com.ferguson.feedengine.data.model.SalesRankBean;
-import com.ferguson.feedengine.data.model.TempBestSellerBean;
 
 @Configuration
+@PropertySource(value = "classpath:stibo_parser.properties")
 public class FullParseJobConfiguration {
-    @Autowired
-    ResourcePatternResolver resoursePatternResolver;
+	@Autowired
+	ResourcePatternResolver resoursePatternResolver;
 
-    @Autowired
-    private JobBuilderFactory jobs;
+	@Autowired
+	private JobBuilderFactory jobs;
 
-    @Autowired 
-    private StepBuilderFactory steps;
+	@Autowired
+	private StepBuilderFactory steps;
 
-    @Bean
-    public MultiResourceFilesPartitioner partitioner() {
-        MultiResourceFilesPartitioner partitioner = new MultiResourceFilesPartitioner();
-        Resource[] resources;
-        try {
-            resources = resoursePatternResolver.getResources("file:src/main/resources/input/*.csv");
-        } catch (IOException e) {
-            throw new RuntimeException("I/O problems when resolving the input file pattern.", e);
-        }
-        partitioner.setResources(resources);
-        return partitioner;
-    }
+	@Value("${catalog.full.feed.filepath}")
+	private String catalogFullFeedFilepath;
+	
+	@Value("#{'${partitioner.es.sources}'.split(',')}")
+	private List<String> partitionerESSources;
+	
+	@Value("${catalog.full.feed.stibofiles}")
+	private String catalogFullFeedStiboFiles;
 
-    /**
-     * preparation Step
-     * In this step will read the csv files. And load these data into Cache, also write these data in to ES.
-     *
-     * @return
-     */
-    @Bean
-    public Step preparationStep() {
-        return steps.get("partitionStep")
-                .partitioner("slaveStep", partitioner())
-                .step(slaveStep())
-                .taskExecutor(taskExecutor())
-                .build();
-    }
+	@Bean
+	public Partitioner preparationPartitioner() {
+		DefaultPartitioner partitioner = new DefaultPartitioner();
+		Resource[] resources;
+		List<String> filePaths = null;
+		try {
+			resources = resoursePatternResolver.getResources(catalogFullFeedFilepath);
+			if (null != resources) {
+				filePaths = Arrays.stream(resources).map(resource -> {
+					try {
+						return resource.getURL().toExternalForm();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+					}
+					return null;
+				}).collect(Collectors.toList());
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("I/O problems when resolving the input file pattern.", e);
+		}
+		partitioner.setResources(filePaths);
+		return partitioner;
+	}
 
-    @Bean("slaveStep")
-    public Step slaveStep() {
-        return steps.get("slaveStep")
-                .tasklet(csvTasklet())
-                .build();
-    }
+	/**
+	 * Load cache step: In this step will read the csv files and stibo file(read non-product elements) with partitioner. And load these data
+	 * into Cache.
+	 *
+	 * @return
+	 */
+	@Bean
+	public Step loadCacheStep() {
+		return steps.get("loadCacheStep").partitioner("loadCacheSlaveStep", preparationPartitioner()).step(loadCacheSlaveStep())
+				.taskExecutor(loadCacheSlaveStepTaskExecutor()).build();
+	}
 
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setMaxPoolSize(2);
-        taskExecutor.setMaxPoolSize(2);
-        taskExecutor.setCorePoolSize(2);
-        taskExecutor.setQueueCapacity(2);
-        taskExecutor.afterPropertiesSet();
-        return taskExecutor;
-    }
+	@Bean("loadCacheSlaveStep")
+	public Step loadCacheSlaveStep() {
+		return steps.get("loadCacheSlaveStep").<Object, Object>chunk(5).reader(cacheItemReader())
+				.processor(cacheItemProcessor()).writer(cacheItemWriter()).build();
+	}
 
-    @StepScope
-    @Bean
-    public FlatFileItemReader<BaseBean> csvLineReader(
-            @Value("#{stepExecutionContext[fileName]}") String filename)
-            throws UnexpectedInputException, ParseException {
-        FlatFileItemReader<BaseBean> reader = new FlatFileItemReader<>();
-        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
-        String[] tokens = null;
-        Class iclass = null;
-        switch (filename) {
-            case "best_seller_data.csv":
-                tokens = new String[]{"skuId", "branch", "rank"};
-                iclass = TempBestSellerBean.class;
-                break;
-            case "sales_rank_data.csv":
-                tokens = new String[]{"skuId", "sales"};
-                iclass = SalesRankBean.class;
-                break;
-            default:
-                tokens = new String[]{};
-                break;
-        }
-        tokenizer.setNames(tokens);
-        ClassPathResource resource = new ClassPathResource("input/" + filename);
-        reader.setResource(resource);
-        DefaultLineMapper<BaseBean> lineMapper = new DefaultLineMapper<>();
-        lineMapper.setLineTokenizer(tokenizer);
-        RecordFieldSetMapper fieldSetMapper = new RecordFieldSetMapper(iclass);
-        lineMapper.setFieldSetMapper(fieldSetMapper);
-        reader.setLinesToSkip(1);
-        reader.setLineMapper(lineMapper);
-        return reader;
-    }
+	@StepScope
+	@Bean
+	public LoadCacheReader cacheItemReader() {
+		return new LoadCacheReader();
+	}
 
-    @StepScope
-    @Bean("csvTasklet")
-    public CsvTasklet csvTasklet() {
-        return new CsvTasklet(csvLineReader(null));
-    }
+	@StepScope
+	@Bean
+	public LoadCacheProcessor cacheItemProcessor() {
+		return new LoadCacheProcessor();
+	}
 
-    /**
-     * "StiboFileFeed" Step
-     * In this step will read the stibo xml file using JAVA StAX.
-     * Will make sure Attribute, Classification, Asset first.(load these data into Cache, also write these data in to ES)
-     * then process the Product element.
-     * if the product element occur before above elements(Attribute, Classification, Asset) in stibo xml file,
-     * will skip product element in this step. Will jump to "StiboFileFeedBackup" Step to cover product element feed.
-     *
-     * @return
-     */
-    @Bean
-    protected Step stiboFileFeedStep() {
-        return steps.get("stiboFileFeedStep").<Map, ESBean> chunk(1000)
-          .reader(catalogDataReaderReader())
-          .processor(catalogDataProcessor())
-          .writer(catalogDataWriter())
-//          .listener(catalogDataWriteListener())
-          .build();
-    }
-    
-    
-    @Bean
-    public ItemReader<Map> catalogDataReaderReader() {
-        return new CatalogDataReader();
-    }
+	@StepScope
+	@Bean
+	public LoadCacheWriter cacheItemWriter() {
+		return new LoadCacheWriter();
+	}
 
-    @Bean
-    public ItemProcessor<Map, ESBean> catalogDataProcessor() {
-        return new CatalogDataProcessor();
-    }
+	@Bean
+	public TaskExecutor loadCacheSlaveStepTaskExecutor() {
+		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+		taskExecutor.setMaxPoolSize(3);
+		taskExecutor.setMaxPoolSize(3);
+		taskExecutor.setCorePoolSize(3);
+		taskExecutor.setQueueCapacity(3);
+		taskExecutor.afterPropertiesSet();
+		return taskExecutor;
+	}
+	
+	
+	/**
+	 * writeESStep: In this step will:
+	 * 1. read the stibo xml file using JAVA StAX(only read product element out), assemble the product bean in processor, and write into ES
+	 * 2. read the attribute,category,asset,bestSeller,salesRank from cache and write it into ES
+	 *
+	 * @return
+	 */
+	@Bean
+	protected Step writeESStep() {
+		
+		return steps.get("writeESStep").partitioner("writeESSlaveStep", writeESPartitioner()).step(writeESSlaveStep())
+				.taskExecutor(writeESSlaveStepTaskExecutor()).build();
+		
+	}
+	
+	@Bean("writeESSlaveStep")
+	public Step writeESSlaveStep() {
+		return steps.get("stiboFileFeedStep").<Object, Object>chunk(2000).reader(writeESReader())
+				.processor(writeESProcessor()).writer(writeESWriter()).build();
+	}
 
-    @Bean
-    public ItemWriter<ESBean> catalogDataWriter() {
-        return new CatalogDataWriter();
-    }
-    
-    
-    @Bean
-    public ItemWriteListener<ESBean> catalogDataWriteListener() {
-        return new CatalogDataWriteListener();
-    }
-    
-    
-    @Bean
-    protected Step stiboFileFeedBackup() {
-        return steps.get("StiboFileFeedBackup").<Map, ESBean> chunk(1000)
-                .reader(catalogDataReaderReader())
-                .processor(catalogDataProcessor())
-                .writer(catalogDataWriter()).listener(catalogDataWriteListener())
-          .build();
-    }
-    
-    
-    @Bean
-    public Job fullParseJob() {
-        return jobs.get("fullParse")
-          .start(preparationStep())
-          .next(stiboFileFeedStep()).on("Complete But Skip Product Feed").to(stiboFileFeedBackup())
-          .from(stiboFileFeedStep()).end()
-          .build();
-    }
+	@Bean
+	public Partitioner writeESPartitioner() {
+		
+		Resource[] resources;
+		List<String> tasks = new ArrayList<String>();
+		List<String> stiboFiles = null;
+		List<String> cacheItems = null;
+		try {
+			resources = resoursePatternResolver.getResources(catalogFullFeedStiboFiles);
+			if (null != resources) {
+				stiboFiles = Arrays.stream(resources).map(resource -> {
+					try {
+						return resource.getURL().toExternalForm();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+					}
+					return null;
+				}).collect(Collectors.toList());
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("I/O problems when resolving the input file pattern.", e);
+		}
+		if (!CollectionUtils.isEmpty(stiboFiles)) {
+			tasks.addAll(stiboFiles);
+		}
+		if (!CollectionUtils.isEmpty(partitionerESSources)) {
+			tasks.addAll(partitionerESSources);
+		}
+		DefaultPartitioner partitioner = new DefaultPartitioner();
+		partitioner.setResources(tasks);
+		return partitioner;
+	}
+	
+	@Bean
+	public TaskExecutor writeESSlaveStepTaskExecutor() {
+		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+		taskExecutor.setMaxPoolSize(6);
+		taskExecutor.setMaxPoolSize(6);
+		taskExecutor.setCorePoolSize(6);
+		taskExecutor.setQueueCapacity(6);
+		taskExecutor.afterPropertiesSet();
+		return taskExecutor;
+	}
+	
+	@StepScope
+	@Bean
+	public WriteESReader writeESReader() {
+		return new WriteESReader();
+	}
 
-    @Bean
-    public FeedEngineCache feedEngineCache() {
-        return new FeedEngineCache();
-    }
+	@StepScope
+	@Bean
+	public WriteESProcessor writeESProcessor() {
+		return new WriteESProcessor();
+	}
+
+	@StepScope
+	@Bean
+	public WriteESWriter writeESWriter() {
+		return new WriteESWriter();
+	}
+
+	@Bean
+	public ItemWriteListener<ESBean> catalogDataWriteListener() {
+		return new CatalogDataWriteListener();
+	}
+
+	@Bean
+	public Job fullParseJob() {
+		return jobs.get("fullParseJob").start(loadCacheStep()).next(writeESStep())
+				.build();
+	}
+
+	@Bean
+	public FeedEngineCache feedEngineCache() {
+		return new FeedEngineCache();
+	}
 }

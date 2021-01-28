@@ -19,6 +19,7 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,7 +29,7 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-@PropertySource(value="classpath:stibo_parser.properties") 
+@Scope("prototype")
 public class XMLStreamParser {
 
 	public static final String ELEMENT_NAME = "_elementName_";
@@ -112,13 +113,27 @@ public class XMLStreamParser {
 	private Set<String> listRefEndElement;
 
 	public Stack<Map> parseContext = new Stack<>();
+	
+	private int productCount = 0;
+	
+	private Set<String> nonProductElements;
+	
+	private Set<String> parsedElement = new HashSet<>();
+	
+	public enum  Operation {
+		NOT_PARSE_PRODUCT, PARSE_PRODUCT_ONLY
+	}
 
-	public Map parse(XMLEventReader reader) throws XMLStreamException {
+	public Map parse(XMLEventReader reader, Operation operation) throws XMLStreamException {
 		while (reader.hasNext()) {
 			XMLEvent nextEvent = reader.nextEvent();
 			if (nextEvent.isStartElement()) {
 				StartElement startElement = nextEvent.asStartElement();
 				String elementName = startElement.getName().getLocalPart();
+				if (Operation.NOT_PARSE_PRODUCT == operation && "Product".equals(elementName) && nonProductElements.equals(parsedElement)) {
+					return null;
+				}
+				
 				if (startElements.contains(elementName)) {
 					parseElementWithAttribute(startElement, elementName);
 				} else if (textOnlyStartElements.contains(elementName)) {
@@ -141,6 +156,12 @@ public class XMLStreamParser {
 				if (listRefEndElement.contains(elementName)) {
 					Map entity = maintainlistRefEndElement(elementName);
 					if (null != entity) {
+						if ("Product".equals(elementName)) {
+							productCount++;
+						}
+						if (Operation.PARSE_PRODUCT_ONLY == operation && nonProductElements.contains(elementName)) {
+							continue;
+						}
 						return entity;
 					}
 				}
@@ -149,6 +170,13 @@ public class XMLStreamParser {
 					entity = parseContext.pop();
 					if (parseContext.isEmpty()) {
 						// System.out.println(JSONObject.toJSONString(entity));
+						if ("Product".equals(elementName)) {
+							productCount++;
+						}
+						parsedElement.add(elementName);
+						if (Operation.PARSE_PRODUCT_ONLY == operation && nonProductElements.contains(elementName)) {
+							continue;
+						}
 						return entity;
 					} else {
 						parseContext.push(entity);
@@ -157,6 +185,7 @@ public class XMLStreamParser {
 			}
 
 		}
+		System.out.println("product count: " + productCount);
 		return null;
 	}
 
@@ -203,6 +232,11 @@ public class XMLStreamParser {
 		listRefEndElement.addAll(listRefEndElementClassification);
 		listRefEndElement.addAll(listRefEndElementAsset);
 		listRefEndElement.addAll(listRefEndElementProduct);
+		
+		nonProductElements = new HashSet<>();
+		nonProductElements.add("Attribute");
+		nonProductElements.add("Classification");
+		nonProductElements.add("Asset");
 	}
 
 	private XMLEvent parseElementWithTextValueOnly(XMLEventReader reader, String elementName)

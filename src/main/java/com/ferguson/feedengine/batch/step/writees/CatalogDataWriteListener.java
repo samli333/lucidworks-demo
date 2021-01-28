@@ -1,4 +1,4 @@
-package com.ferguson.feedengine.batch.step.stibofeed;
+package com.ferguson.feedengine.batch.step.writees;
 
 import java.util.List;
 import java.util.stream.Collectors;
